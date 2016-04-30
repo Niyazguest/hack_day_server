@@ -40,7 +40,7 @@ public class WebSocketConfig extends AbstractSecurityWebSocketMessageBrokerConfi
     }
 
     protected void configureInbound(MessageSecurityMetadataSourceRegistry messages) {
-        messages.simpDestMatchers("/app/**").access("hasRole('ROLE_USER')");
+    //    messages.simpDestMatchers("/app/**").access("hasRole('ROLE_USER')");
     }
 
     @Bean

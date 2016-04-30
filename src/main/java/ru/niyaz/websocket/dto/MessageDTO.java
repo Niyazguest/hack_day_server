@@ -9,44 +9,62 @@ import java.util.Date;
  * Created by user on 16.04.2016.
  */
 public class MessageDTO implements Serializable {
-    private String message;
-    private Date date;
-    private UserInfo author;
-    private DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy HH:mm:ss");
+
+    private Integer clientID;
+    private Integer xy;
+    private Integer xz;
+    private Integer zy;
+    private Integer speed;
 
     public MessageDTO() {
 
     }
 
-    public MessageDTO(String message) {
-        this.message = message;
+    public MessageDTO(Integer clientID, Integer xy, Integer xz, Integer zy, Integer speed) {
+        this.clientID = clientID;
+        this.xy = xy;
+        this.xz = xz;
+        this.zy = zy;
+        this.speed = speed;
     }
 
-    public String getMessage() {
-        return message;
+    public Integer getClientID() {
+        return clientID;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setClientID(Integer clientID) {
+        this.clientID = clientID;
     }
 
-    public Date getDate() {
-        return date;
+    public Integer getXy() {
+        return xy;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
+    public void setXy(Integer xy) {
+        this.xy = xy;
     }
 
-    public String getDateFormatted() {
-        return dateFormat.format(date);
+    public Integer getXz() {
+        return xz;
     }
 
-    public UserInfo getAuthor() {
-        return author;
+    public void setXz(Integer xz) {
+        this.xz = xz;
     }
 
-    public void setAuthor(UserInfo author) {
-        this.author = author;
+    public Integer getZy() {
+        return zy;
+    }
+
+    public void setZy(Integer zy) {
+        this.zy = zy;
+    }
+
+    public Integer getSpeed() {
+        return speed;
+    }
+
+    public void setSpeed(Integer speed) {
+        this.speed = speed;
     }
 }

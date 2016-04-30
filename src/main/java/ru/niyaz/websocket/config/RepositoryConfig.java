@@ -42,7 +42,7 @@ public class RepositoryConfig {
     public DataSource dataSource() {
         final JndiDataSourceLookup dsLookup = new JndiDataSourceLookup();
         dsLookup.setResourceRef(true);
-        DataSource dataSource = dsLookup.getDataSource("jdbc/MESSAGES_DB");
+        DataSource dataSource = dsLookup.getDataSource("jdbc/SMARTPHONES_DB");
         return dataSource;
     }
 

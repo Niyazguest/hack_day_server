@@ -1,33 +1,18 @@
 package ru.niyaz.websocket.controller;
 
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.utils.URIBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
-import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.thymeleaf.context.WebContext;
-import ru.niyaz.websocket.dto.UserInfo;
+import ru.niyaz.websocket.dto.MessageDTO;
 import ru.niyaz.websocket.service.AuthenticationService;
-import ru.niyaz.websocket.service.MessageService;
 import ru.niyaz.websocket.util.ThymeleafTemplateUtil;
 
-import javax.naming.InitialContext;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
-import java.net.URI;
-import java.util.Date;
 
 /**
  * Created by user on 18.04.2016.
@@ -36,50 +21,60 @@ import java.util.Date;
 @Controller
 public class MainController {
 
+    private SimpMessagingTemplate simpMessagingTemplate;
+
     @Autowired
     private AuthenticationService authenticationService;
 
-    @Autowired
-    private InitialContext initialContext;
-
-    @Autowired
-    private MessageService messageService;
-
     @RequestMapping(value = "/", method = RequestMethod.GET)
-    public void index(HttpServletRequest request, HttpServletResponse response) {
+    public void get3D(HttpServletRequest request, HttpServletResponse response) {
         try {
             response.setContentType("text/html;charset=UTF-8");
             WebContext webContext = new WebContext(request, response, request.getSession().getServletContext());
-            UserInfo userInfo = authenticationService.getCurrentUserInfo();
-            if (userInfo != null) {
-                webContext.setVariable("vk_user_id", userInfo.getUserID());
-                webContext.setVariable("name", userInfo.getName() + " " + userInfo.getLastName());
-                webContext.setVariable("photo_url", userInfo.getPhotoURL());
-                webContext.setVariable("page_url", userInfo.getPageURL());
-                webContext.setVariable("messages", messageService.getMessagesBeforeDate(new Date()));
-                ThymeleafTemplateUtil.getTemplateEngine().process("index", webContext, response.getWriter());
-            } else {
-                ThymeleafTemplateUtil.getTemplateEngine().process("login", webContext, response.getWriter());
-            }
+            ThymeleafTemplateUtil.getTemplateEngine().process("index", webContext, response.getWriter());
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
-    @RequestMapping(value = "/login", method = RequestMethod.GET)
-    public void login(@RequestParam(value = "code") String code, HttpServletRequest request, HttpServletResponse response) {
+    /* For Android */
+    @RequestMapping(value = "/angles", method = RequestMethod.POST)
+    public void angles(@RequestParam(value = "id", required = false) Integer clientID,
+                       @RequestParam(value = "xy", required = false) Integer xy,
+                       @RequestParam(value = "xz", required = false) Integer xz,
+                       @RequestParam(value = "zy", required = false) Integer zy,
+                       @RequestParam(value = "speed", required = false) Integer speed,
+                       HttpServletRequest request, HttpServletResponse response) {
         try {
-            if (authenticationService.authenticateUser(code)) {
-                String siteName = (String) initialContext.lookup("java:/comp/env/siteName");
-                response.sendRedirect(siteName);
-            } else {
-                WebContext webContext = new WebContext(request, response, request.getSession().getServletContext());
-                ThymeleafTemplateUtil.getTemplateEngine().process("login", webContext, response.getWriter());
-            }
+            response.setContentType("text/html;charset=UTF-8");
+            response.setStatus(200);
+            MessageDTO messageDTO = new MessageDTO(clientID, xy, xz, zy, speed);
+            broadcastUpdatedMessages(messageDTO);
         } catch (Exception ex) {
             ex.printStackTrace();
         }
     }
 
+    /* For Android */
+    @RequestMapping(value = "/reg", method = RequestMethod.GET)
+    public void registration(HttpServletRequest request, HttpServletResponse response) {
+        try {
+            Integer clientID = authenticationService.registrationSmartPhone();
+            response.setHeader("id", clientID.toString());
+            response.setStatus(200);
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    @Autowired
+    public void setSimpMessagingTemplate(SimpMessagingTemplate simpMessagingTemplate) {
+        this.simpMessagingTemplate = simpMessagingTemplate;
+    }
+
+    /* Send to client browser */
+    private void broadcastUpdatedMessages(MessageDTO message) {
+        simpMessagingTemplate.convertAndSend("/topic/message", message);
+    }
 
 }

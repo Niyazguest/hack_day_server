@@ -1,16 +1,3 @@
-.msg_container {
-    margin-bottom: 20px;
-    background-color: #F0F8FF;
-}
+#renderPlace {
 
-.msg_sent {
-    background-color: #aadcff;
-}
-
-.msg_receive {
-    background-color: #cafaff;
-}
-
-time {
-    color: #929A9A;
 }
