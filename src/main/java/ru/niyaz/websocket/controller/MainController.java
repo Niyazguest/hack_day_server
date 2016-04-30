@@ -39,8 +39,7 @@ public class MainController {
 
     /* For Android */
     @RequestMapping(value = "/angles", method = RequestMethod.POST)
-    public void angles(@RequestParam(value = "id", required = false) Integer clientID,
-                       @RequestParam(value = "xy", required = false) Integer xy,
+    public void angles(@RequestParam(value = "xy", required = false) Integer xy,
                        @RequestParam(value = "xz", required = false) Integer xz,
                        @RequestParam(value = "zy", required = false) Integer zy,
                        @RequestParam(value = "speed", required = false) Integer speed,
@@ -48,7 +47,7 @@ public class MainController {
         try {
             response.setContentType("text/html;charset=UTF-8");
             response.setStatus(200);
-            MessageDTO messageDTO = new MessageDTO(clientID, xy, xz, zy, speed);
+            MessageDTO messageDTO = new MessageDTO(0, xy, xz, zy, speed);
             broadcastUpdatedMessages(messageDTO);
         } catch (Exception ex) {
             ex.printStackTrace();
