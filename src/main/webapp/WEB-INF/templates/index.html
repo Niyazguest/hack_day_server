@@ -26,8 +26,22 @@
 
 </script>
 
-<div id="renderPlace" class="container row col-md-10 col-md-offset-1">
+<div id="renderPlace" class="container row col-md-12">
 
+</div>
+<div id="dashboard" class="container row col-md-10">
+    <div class="col-md-4">
+        <label class="dashboard-label">Скорость:</label>
+        <span id="speed"></span>
+    </div>
+    <div class="col-md-2 col-offset-md-2">
+        <label class="dashboard-label">Количество ошибок:</label>
+        <span id="mistakesCount"></span>
+    </div>
+    <div class="col-md-4 col-offset-md-4">
+        <label class="dashboard-label">Ошибки:</label>
+        <div id="mistakes" style="overflow: auto; height: 150px;"></div>
+    </div>
 </div>
 
 

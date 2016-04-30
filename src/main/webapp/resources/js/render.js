@@ -7,6 +7,7 @@ var scene = new THREE.Scene();
 var renderer = new THREE.WebGLRenderer({antialias: true});
 var parentTransform = new THREE.Object3D();
 var lineMaterial = new THREE.LineBasicMaterial({color: 0x0000ff, linewidth: 10});
+var signLineMaterial = new THREE.LineBasicMaterial({color: 0x010102, linewidth: 10});
 var signsMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
 
 var horizont;
@@ -17,12 +18,14 @@ var lastDashedLineX = 0;
 var xzLast = 0;
 var speed = 0;
 
-var speedDistances=[];
+var currentSpeed;
+var distancesMaxSpeeds = [];
+var mistakesCount = 0;
 
 function init() {
     renderer.setClearColor(0xf0f0f0);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(1200, 490);
+    renderer.setSize(1300, 490);
     var axes = new THREE.AxisHelper(30);
     raycaster = new THREE.Raycaster();
     camera.position.x = -10;
@@ -34,8 +37,12 @@ function init() {
 
     for (var i = 0; i < 30000; i += 1000) {
         var maxSpeed = Math.round(Math.random() * 10 + 1) * 10;
-        speedDistances[i] = maxSpeed;
+        distancesMaxSpeeds[i / 1000] = maxSpeed;
         drawSign(i, maxSpeed.toString());
+    }
+
+    for (var j = 2000; j < 30000; j += 2000) {
+        drawBlock(j, (Math.random()) < 0.5 ? true : false);
     }
 }
 
@@ -51,6 +58,7 @@ function render() {
 
 function drawBase() {
     camera.position.y = 20;
+    $('#speed').text(speed);
     camera.position.x = camera.position.x + speed * 0.1;
     camera.position.z = camera.position.z - xzLast * 0.01;
     var vectorHor1 = new THREE.Vector3();
@@ -114,9 +122,18 @@ function drawBase() {
     parentTransform.add(leftEdge);
     parentTransform.add(rightEdge);
 
+    $('#mistakesCount').text(mistakesCount);
+    var distanceNumber = Math.floor(camera.position.x / 1000);
+    var maxSpeed = distancesMaxSpeeds[Math.floor(camera.position.x / 1000)];
+    if (maxSpeed < speed && $('#mistakes>[data-id=' + distanceNumber + ']').length == 0) {
+        mistakesCount = mistakesCount + 1;
+        $('#mistakes').append('<div data-id="' + distanceNumber + '" class="mistake-text">' + 'Нарушение скоростного режима: ' + speed.toString() + ' км/ч ' + '(разрешенная - ' + maxSpeed.toString() + ' км/ч)' + '</div>');
+    }
 }
 
 function drawSign(position, text) {
+    if (position == 0)
+        position = 50;
     var vectorSign60_1 = new THREE.Vector3();
     vectorSign60_1.set(position, 0, 45);
     var vectorSign60_2 = new THREE.Vector3();
@@ -127,7 +144,7 @@ function drawSign(position, text) {
         vectorSign60_2
     );
     vectorSign60Geo.computeLineDistances();
-    var signStick = new THREE.Line(vectorSign60Geo, lineMaterial);
+    var signStick = new THREE.Line(vectorSign60Geo, signLineMaterial);
     parentTransform.add(signStick);
     var ringGeometry = new THREE.TorusGeometry(10, 0.1, 32, 32);
     var ring = new THREE.Mesh(ringGeometry, signsMaterial);
@@ -141,29 +158,33 @@ function drawSign(position, text) {
     var coordsText = new THREE.Mesh(textGeo, signsMaterial);
     coordsText.position.x = position;
     coordsText.position.y = 20;
-    coordsText.position.z = 42;
+    coordsText.position.z = 38;
     coordsText.rotation.y = 4.5;
     parentTransform.add(coordsText);
 }
 
 
-function drawBlock(position) {
+function drawBlock(position, leftSide) {
+    var offset = 0;
+    if (leftSide)
+        offset = -30;
+
     var vector1 = new THREE.Vector3();
-    vector1.set(position, 0, 0);
+    vector1.set(position, 0, offset);
     var vector2 = new THREE.Vector3();
-    vector2.set(position, 20, 0);
+    vector2.set(position, 20, offset);
     var vector3 = new THREE.Vector3();
-    vector3.set(position, 0, 5);
+    vector3.set(position, 0, 5 + offset);
     var vector4 = new THREE.Vector3();
-    vector4.set(position, 20, 5);
+    vector4.set(position, 20, 5 + offset);
     var vector5 = new THREE.Vector3();
-    vector5.set(position, 0, 10);
+    vector5.set(position, 0, 10 + offset);
     var vector6 = new THREE.Vector3();
-    vector6.set(position, 20, 10);
+    vector6.set(position, 20, 10 + offset);
     var vector7 = new THREE.Vector3();
-    vector7.set(position, 0, 15);
+    vector7.set(position, 0, 15 + offset);
     var vector8 = new THREE.Vector3();
-    vector8.set(position, 20, 15);
+    vector8.set(position, 20, 15 + offset);
     var vectorBlockGeo = new THREE.Geometry();
     vectorBlockGeo.vertices.push(
         vector1,
@@ -176,6 +197,6 @@ function drawBlock(position) {
         vector8
     );
     vectorBlockGeo.computeLineDistances();
-    var block = new THREE.Line(vectorBlockGeo, lineMaterial);
+    var block = new THREE.Line(vectorBlockGeo, signsMaterial);
     parentTransform.add(block);
 }
