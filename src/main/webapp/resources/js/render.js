@@ -7,6 +7,7 @@ var scene = new THREE.Scene();
 var renderer = new THREE.WebGLRenderer({antialias: true});
 var parentTransform = new THREE.Object3D();
 var lineMaterial = new THREE.LineBasicMaterial({color: 0x0000ff, linewidth: 10});
+var dashedLineMaterial = new THREE.LineBasicMaterial({color: 0x0000ff, linewidth: 100});
 var signLineMaterial = new THREE.LineBasicMaterial({color: 0x010102, linewidth: 10});
 var signsMaterial = new THREE.MeshBasicMaterial({color: 0xff0000});
 
@@ -18,16 +19,16 @@ var lastDashedLineX = 0;
 var xzLast = 0;
 var speed = 0;
 
-var currentSpeed;
 var distancesMaxSpeeds = [];
 var mistakesCount = 0;
+
+var cars = [];
 
 function init() {
     renderer.setClearColor(0xf0f0f0);
     renderer.setPixelRatio(window.devicePixelRatio);
-    renderer.setSize(1300, 490);
+    renderer.setSize(1400, 490);
     var axes = new THREE.AxisHelper(30);
-    raycaster = new THREE.Raycaster();
     camera.position.x = -10;
     camera.position.y = 0;
     camera.position.z = 0;
@@ -41,8 +42,8 @@ function init() {
         drawSign(i, maxSpeed.toString());
     }
 
-    for (var j = 2000; j < 30000; j += 2000) {
-        drawBlock(j, (Math.random()) < 0.5 ? true : false);
+    for (var j = 1000; j < 30000; j += 2000) {
+        drawCar(j);
     }
 }
 
@@ -72,7 +73,7 @@ function drawBase() {
     );
 
     var vector3 = new THREE.Vector3();
-    vector3.set(camera.position.x, 0, -30);
+    vector3.set(camera.position.x, 0, -45);
     var vector4 = new THREE.Vector3();
     vector4.set(camera.position.x + 1000, 0, -70);
     var leftEdgeGeo = new THREE.Geometry();
@@ -82,7 +83,7 @@ function drawBase() {
     );
 
     var vector5 = new THREE.Vector3();
-    vector5.set(camera.position.x, 0, 30);
+    vector5.set(camera.position.x, 0, 45);
     var vector6 = new THREE.Vector3();
     vector6.set(camera.position.x + 1000, 0, 70);
     var rightEdgeGeo = new THREE.Geometry();
@@ -100,7 +101,9 @@ function drawBase() {
     parentTransform.remove(rightEdge);
     horizont = new THREE.Line(horizontGeo, lineMaterial);
     leftEdge = new THREE.Line(leftEdgeGeo, lineMaterial);
+    leftEdge.name = 'edge';
     rightEdge = new THREE.Line(rightEdgeGeo, lineMaterial);
+    rightEdge.name = 'edge';
 
     if (lastDashedLineX < camera.position.x + 800) {
         var vectorDashed1 = new THREE.Vector3();
@@ -113,7 +116,7 @@ function drawBase() {
             vectorDashed2
         );
         vectorDashedGeo.computeLineDistances();
-        var dashedLine = new THREE.Line(vectorDashedGeo, lineMaterial);
+        var dashedLine = new THREE.Line(vectorDashedGeo, dashedLineMaterial);
         lastDashedLineX = camera.position.x + 1000;
         parentTransform.add(dashedLine);
     }
@@ -129,6 +132,31 @@ function drawBase() {
         mistakesCount = mistakesCount + 1;
         $('#mistakes').append('<div data-id="' + distanceNumber + '" class="mistake-text">' + 'Нарушение скоростного режима: ' + speed.toString() + ' км/ч ' + '(разрешенная - ' + maxSpeed.toString() + ' км/ч)' + '</div>');
     }
+
+    if (camera.position.z < -45 || camera.position.z > 45) {
+        camera.position.z = 0;
+        $('#mistakes').append('<div class="mistake-text" style="color: #ff5619">Съезд с дороги</div>');
+    }
+
+    var origin = new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z);
+    var direction = new THREE.Vector3(1, 0, 0);
+    var raycaster = new THREE.Raycaster(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z), direction, 1, 10);
+    var raycaster2 = new THREE.Raycaster(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z - 20), direction, 1, 10);
+    var raycaster3 = new THREE.Raycaster(new THREE.Vector3(camera.position.x, camera.position.y, camera.position.z + 20), direction, 1, 10);
+    var intersects = raycaster.intersectObjects(parentTransform.children, false);
+    var intersects2 = raycaster2.intersectObjects(parentTransform.children, false);
+    var intersects3 = raycaster3.intersectObjects(parentTransform.children, false);
+    intersects = intersects.concat(intersects2).concat(intersects3);
+    for (var i = 0; i < intersects.length; ++i) {
+        if (intersects[i].object.name == 'car') {
+            $('#mistakes').append('<div class="mistake-text" style="color: #ff5619">Авария</div>');
+            speed = -1000;
+        }
+    }
+    for (var i = 0; i < cars.length; ++i) {
+        cars[i].position.x = cars[i].position.x + Math.round(Math.random() * 10);
+    }
+
 }
 
 function drawSign(position, text) {
@@ -137,7 +165,7 @@ function drawSign(position, text) {
     var vectorSign60_1 = new THREE.Vector3();
     vectorSign60_1.set(position, 0, 45);
     var vectorSign60_2 = new THREE.Vector3();
-    vectorSign60_2.set(position, 20, 45);
+    vectorSign60_2.set(position, 10, 45);
     var vectorSign60Geo = new THREE.Geometry();
     vectorSign60Geo.vertices.push(
         vectorSign60_1,
@@ -146,7 +174,7 @@ function drawSign(position, text) {
     vectorSign60Geo.computeLineDistances();
     var signStick = new THREE.Line(vectorSign60Geo, signLineMaterial);
     parentTransform.add(signStick);
-    var ringGeometry = new THREE.TorusGeometry(10, 0.1, 32, 32);
+    var ringGeometry = new THREE.TorusGeometry(10, 0.5, 32, 32);
     var ring = new THREE.Mesh(ringGeometry, signsMaterial);
     ring.position.x = position;
     ring.position.y = 20;
@@ -200,3 +228,51 @@ function drawBlock(position, leftSide) {
     var block = new THREE.Line(vectorBlockGeo, signsMaterial);
     parentTransform.add(block);
 }
+
+
+function drawCar(position) {
+
+    var light = new THREE.DirectionalLight(0xffffff);
+
+    light.position.set(0, 100, 60);
+    light.castShadow = true;
+    light.shadowCameraLeft = -60;
+    light.shadowCameraTop = -60;
+    light.shadowCameraRight = 60;
+    light.shadowCameraBottom = 60;
+    light.shadowCameraNear = 1;
+    light.shadowCameraFar = 1000;
+    light.shadowBias = -.0001
+    light.shadowMapWidth = light.shadowMapHeight = 1024;
+    light.shadowDarkness = .7;
+
+    parentTransform.add(light);
+
+    var loader = new THREE.JSONLoader();
+    var mesh;
+    loader.load('/resources/js/car.js', function (geometry, materials) {
+        var material = new THREE.MeshLambertMaterial({
+            map: THREE.ImageUtils.loadTexture('/resources/js/gtare.jpg'),
+            colorAmbient: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+            colorDiffuse: [0.480000026226044, 0.480000026226044, 0.480000026226044],
+            colorSpecular: [0.8999999761581421, 0.8999999761581421, 0.8999999761581421]
+        });
+
+        mesh = new THREE.Mesh(
+            geometry,
+            material
+        );
+        mesh.scale.set(0.4, 0.4, 0.4);
+        mesh.receiveShadow = true;
+        mesh.castShadow = true;
+        mesh.rotation.y = Math.PI / 2;
+        mesh.position.x = position;
+        mesh.position.y = 0;
+        mesh.position.z = 15;
+        mesh.name = 'car';
+        parentTransform.add(mesh);
+        cars[cars.length] = mesh;
+    });
+
+}
+
